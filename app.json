@@ -19,6 +19,10 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      ["expo-camera", { "cameraPermission": "允许 TreeLens 访问相机以拍摄树木照片" }],
+      ["expo-location", { "locationWhenInUsePermission": "允许 TreeLens 访问位置信息以提升识别准确度" }]
+    ]
   }
 }

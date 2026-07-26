@@ -68,13 +68,13 @@ npx expo start
 - ✅ Camera capture UI (`CameraCaptureModal`) + GPS auto-detect via `expo-location` — photo taken/picked triggers a best-effort location fetch, lat/lng sent to `/identify`
 
 ## Known Issues / Active Bugs
-- `API_URL` in `App.js` is hardcoded to local IP `http://192.168.0.19:8000` — needs proper config
 - Web picker uses blob URI which works; native mobile not yet tested end-to-end (camera + location permission flow specifically needs a real device/simulator)
 - Identification accuracy is poor on non-close-up photos — leaf shape needs a clear close shot; multi-image support (see below) would help
 
 ## Recently Fixed
 - `main.py` was crashing `/identify` with 500 on every call: `services.identifier` was imported before `load_dotenv()` ran, and an ambient empty `ANTHROPIC_API_KEY` env var was shadowing the real key. Fixed with `load_dotenv(override=True)` moved before the import.
 - `ImagePicker.MediaTypeOptions` (deprecated in SDK 56) replaced with `mediaTypes: ['images']`.
+- `API_URL` in `App.js` was hardcoded to a personal local IP. Now read from `EXPO_PUBLIC_API_URL` (Expo auto-inlines `EXPO_PUBLIC_*` vars from `.env`). Real value lives in gitignored `treelens-app/.env`; `treelens-app/.env.example` documents the format.
 
 ## Planned Features (not yet built)
 1. **GBIF integration** — show real distribution map using `GET https://api.gbif.org/v1/occurrence/search?scientificName={name}&country=US`

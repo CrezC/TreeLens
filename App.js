@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 
-const API_URL = 'http://192.168.0.19:8000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const LOCATION_TIMEOUT_MS = 8000;
 
 const theme = {

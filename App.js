@@ -266,12 +266,13 @@ function CameraCaptureModal({ visible, onClose, onCapture }) {
             </TouchableOpacity>
           </View>
         ) : (
-          <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back">
+          <>
+            <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
             <TouchableOpacity style={styles.cameraCloseButton} onPress={onClose}>
               <Text style={styles.cameraCloseText}>✕</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.shutterButton} onPress={handleShutter} />
-          </CameraView>
+          </>
         )}
       </View>
     </Modal>

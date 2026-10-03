@@ -18,7 +18,9 @@
       "Bash(curl -s http://localhost:8081/status)",
       "Bash(python3 -c \"import qrcode; print\\('ok'\\)\")",
       "Bash(pip3 install *)",
-      "Bash(git commit -m 'Add Claude Code launch config and local permissions *)"
+      "Bash(git commit -m 'Add Claude Code launch config and local permissions *)",
+      "Bash(git fsck *)",
+      "Bash(git config *)"
     ]
   }
 }

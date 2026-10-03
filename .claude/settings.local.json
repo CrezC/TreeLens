@@ -20,7 +20,9 @@
       "Bash(pip3 install *)",
       "Bash(git commit -m 'Add Claude Code launch config and local permissions *)",
       "Bash(git fsck *)",
-      "Bash(git config *)"
+      "Bash(git config *)",
+      "Bash(npx expo-doctor *)",
+      "Bash(kill 46648)"
     ]
   }
 }

@@ -5,21 +5,12 @@ import json
 
 from services.gbif import get_local_species
 from services.prompt_builder import build_prompt
+from services.image_normalize import to_jpeg_bytes, JPEG_MEDIA_TYPE
 
 client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
 def encode_image(image_bytes: bytes) -> str:
     return base64.standard_b64encode(image_bytes).decode("utf-8")
-
-def get_media_type(image_bytes: bytes) -> str:
-    if image_bytes[:4] == b'\x89PNG':
-        return "image/png"
-    elif image_bytes[:2] in (b'\xff\xd8',):
-        return "image/jpeg"
-    elif image_bytes[:4] == b'RIFF' and image_bytes[8:12] == b'WEBP':
-        return "image/webp"
-    else:
-        return "image/jpeg"
 
 def identify_tree(
     images: list[bytes],
@@ -36,8 +27,8 @@ def identify_tree(
             "type": "image",
             "source": {
                 "type": "base64",
-                "media_type": get_media_type(image_bytes),
-                "data": encode_image(image_bytes),
+                "media_type": JPEG_MEDIA_TYPE,
+                "data": encode_image(to_jpeg_bytes(image_bytes)),
             },
         }
         for image_bytes in images

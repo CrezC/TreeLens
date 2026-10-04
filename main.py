@@ -7,6 +7,7 @@ load_dotenv(override=True)
 
 from services.identifier import identify_tree
 from services.labels import label_for_filename
+from services.image_normalize import ImageDecodeError
 
 MAX_PHOTOS = 3
 
@@ -34,5 +35,8 @@ async def identify(
         raise HTTPException(status_code=400, detail=f"Maximum {MAX_PHOTOS} photos per identification")
     images = [await f.read() for f in files]
     image_labels = [label_for_filename(f.filename) for f in files]
-    result = identify_tree(images, image_labels, latitude, longitude, capture_date)
+    try:
+        result = identify_tree(images, image_labels, latitude, longitude, capture_date)
+    except ImageDecodeError:
+        raise HTTPException(status_code=400, detail="无法处理图片，请换一张照片")
     return result

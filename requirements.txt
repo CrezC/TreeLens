@@ -4,4 +4,5 @@ anthropic==0.101.0
 python-dotenv==1.2.2
 python-multipart==0.0.28
 Pillow==12.2.0
+pillow-heif==1.8.0
 requests==2.34.0

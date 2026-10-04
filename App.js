@@ -220,6 +220,27 @@ export default function App() {
           {/* Confidence */}
           <Text style={styles.confidence}>识别置信度：{result.confidence}%</Text>
 
+          {/* Compare with reference photo */}
+          {result.reference_image && (
+            <View style={styles.compareRow}>
+              {(images.leaf || images.full || images.bark) && (
+                <View style={styles.compareCol}>
+                  <Image
+                    source={{ uri: (images.leaf || images.full || images.bark).uri }}
+                    style={styles.compareImage}
+                  />
+                  <Text style={styles.compareLabel}>你的照片</Text>
+                </View>
+              )}
+              <View style={styles.compareCol}>
+                <TouchableOpacity onPress={() => Linking.openURL(result.reference_image.page_url)}>
+                  <Image source={{ uri: result.reference_image.thumbnail_url }} style={styles.compareImage} />
+                </TouchableOpacity>
+                <Text style={styles.compareLabel}>参考图 · {result.reference_image.attribution}</Text>
+              </View>
+            </View>
+          )}
+
           {/* Description */}
           <Text style={styles.sectionTitle}>简介</Text>
           <Text style={styles.bodyText}>{result.description}</Text>
@@ -356,6 +377,10 @@ const styles = StyleSheet.create({
   badge: { backgroundColor: 'rgba(109,190,111,0.15)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: theme.accent },
   badgeText: { color: theme.accent, fontWeight: '700', fontSize: 14 },
   confidence: { color: theme.textMuted, fontSize: 13, marginBottom: 16 },
+  compareRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  compareCol: { flex: 1 },
+  compareImage: { width: '100%', height: 140, borderRadius: 12, backgroundColor: theme.surface },
+  compareLabel: { color: theme.textMuted, fontSize: 12, marginTop: 6, textAlign: 'center' },
   sectionTitle: { color: theme.accent, fontSize: 15, fontWeight: '600', marginTop: 16, marginBottom: 8 },
   bodyText: { color: theme.textSecond, fontSize: 14, lineHeight: 22 },
   alertCard: { borderWidth: 1, borderRadius: 12, padding: 14, marginTop: 12 },

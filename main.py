@@ -8,6 +8,7 @@ load_dotenv(override=True)
 from services.identifier import identify_tree
 from services.labels import label_for_filename
 from services.image_normalize import ImageDecodeError
+from services.wikipedia import get_reference_image
 
 MAX_PHOTOS = 3
 
@@ -39,4 +40,6 @@ async def identify(
         result = identify_tree(images, image_labels, latitude, longitude, capture_date)
     except ImageDecodeError:
         raise HTTPException(status_code=400, detail="无法处理图片，请换一张照片")
+    if not result.get("error"):
+        result["reference_image"] = get_reference_image(result.get("scientific_name"))
     return result

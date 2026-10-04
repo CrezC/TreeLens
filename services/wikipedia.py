@@ -1,4 +1,5 @@
 import urllib.parse
+from functools import lru_cache
 
 import requests
 
@@ -9,6 +10,7 @@ TIMEOUT_S = 5
 HEADERS = {"User-Agent": "TreeLens/1.0 (tree identification app; reference-image lookup)"}
 
 
+@lru_cache(maxsize=256)
 def get_reference_image(scientific_name: str) -> dict | None:
     if not scientific_name:
         return None

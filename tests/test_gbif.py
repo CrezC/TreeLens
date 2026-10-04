@@ -79,6 +79,39 @@ def test_missing_facets_returns_empty_list(monkeypatch):
     assert gbif.get_local_species(45.5, -122.6) == []
 
 
+def test_repeated_nearby_coords_hit_cache(monkeypatch):
+    call_count = {"n": 0}
+
+    def fake_get(url, params=None, timeout=None):
+        call_count["n"] += 1
+        return _FakeResponse({
+            "facets": [{"counts": [{"name": "Acer saccharum", "count": 50}]}]
+        })
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    first = gbif.get_local_species(45.501, -122.602)
+    second = gbif.get_local_species(45.50, -122.60)  # rounds to the same cache key
+
+    assert first == second == ["Acer saccharum"]
+    assert call_count["n"] == 1
+
+
+def test_different_coords_do_not_share_cache(monkeypatch):
+    seen_params = []
+
+    def fake_get(url, params=None, timeout=None):
+        seen_params.append(params["geoDistance"])
+        return _FakeResponse({"facets": [{"counts": [{"name": "Acer saccharum", "count": 1}]}]})
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    gbif.get_local_species(45.5, -122.6)
+    gbif.get_local_species(40.7, -74.0)
+
+    assert len(seen_params) == 2
+
+
 def test_invalid_coords_skip_request_entirely(monkeypatch):
     def fake_get(*args, **kwargs):
         raise AssertionError("requests.get should not be called for invalid coords")

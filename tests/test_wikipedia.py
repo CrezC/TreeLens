@@ -54,6 +54,25 @@ def test_name_with_spaces_is_url_encoded(monkeypatch):
     assert captured["url"].endswith("/Quercus_rubra")
 
 
+def test_repeated_lookups_hit_cache(monkeypatch):
+    call_count = {"n": 0}
+
+    def fake_get(url, timeout=None, headers=None):
+        call_count["n"] += 1
+        return _FakeResponse({
+            "thumbnail": {"source": "https://example.com/thumb.jpg"},
+            "content_urls": {"desktop": {"page": "https://en.wikipedia.org/wiki/Acer_saccharum"}},
+        })
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    first = wikipedia.get_reference_image("Acer saccharum")
+    second = wikipedia.get_reference_image("Acer saccharum")
+
+    assert first == second
+    assert call_count["n"] == 1
+
+
 def test_404_returns_none(monkeypatch):
     monkeypatch.setattr(requests, "get", lambda *a, **k: _FakeResponse({}, status_code=404))
     assert wikipedia.get_reference_image("Totally Fake Species") is None

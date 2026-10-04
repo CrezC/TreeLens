@@ -13,12 +13,20 @@ import HistoryModal from './HistoryModal';
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const LOCATION_TIMEOUT_MS = 8000;
 
+const SLOTS = [
+  { key: 'leaf', label: '叶片近照', icon: '🍃' },
+  { key: 'bark', label: '树皮', icon: '🌳' },
+  { key: 'full', label: '整树', icon: '🌲' },
+];
+
 export default function App() {
-  const [image, setImage] = useState(null);
+  const [images, setImages] = useState({ leaf: null, bark: null, full: null });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [activeSlot, setActiveSlot] = useState(null);
   const [location, setLocation] = useState(null);
+  const [captureDate, setCaptureDate] = useState(null);
   const [historyList, setHistoryList] = useState([]);
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -40,7 +48,18 @@ export default function App() {
     }
   };
 
-  const pickImage = async () => {
+  const handleNewPhoto = (slotKey, asset) => {
+    const isFirstOfRound = Object.values(images).every((v) => !v);
+    if (isFirstOfRound) {
+      setResult(null);
+      setLocation(null);
+      setCaptureDate(new Date().toISOString());
+      fetchLocation();
+    }
+    setImages((prev) => ({ ...prev, [slotKey]: asset }));
+  };
+
+  const pickImage = async (slotKey) => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('需要相册权限');
@@ -51,44 +70,46 @@ export default function App() {
       quality: 0.8,
     });
     if (!res.canceled) {
-      setImage(res.assets[0]);
-      setResult(null);
-      setLocation(null);
-      fetchLocation();
+      handleNewPhoto(slotKey, res.assets[0]);
     }
   };
 
-  const openCamera = () => setCameraOpen(true);
+  const openCamera = (slotKey) => {
+    setActiveSlot(slotKey);
+    setCameraOpen(true);
+  };
 
   const onCameraCapture = (photo) => {
-    setImage(photo);
-    setResult(null);
-    setLocation(null);
-    fetchLocation();
+    handleNewPhoto(activeSlot, photo);
     setCameraOpen(false);
   };
 
+  const chooseSource = (slot) => {
+    Alert.alert(slot.label, undefined, [
+      { text: '拍照', onPress: () => openCamera(slot.key) },
+      { text: '从相册选择', onPress: () => pickImage(slot.key) },
+      { text: '取消', style: 'cancel' },
+    ]);
+  };
+
   const identify = async () => {
-    console.log('按钮被点击了');
-    console.log('image状态：', image);
-    if (!image) {
-      console.log('没有图片，退出');
+    const filledSlots = SLOTS.filter((slot) => images[slot.key]);
+    if (filledSlots.length === 0) {
       return;
     }
     setLoading(true);
-    console.log('开始发请求到：', API_URL);
     try {
-      const response_img = await fetch(image.uri);
-      console.log('图片fetch结果：', response_img.status);
-      const blob = await response_img.blob();
-      console.log('blob大小：', blob.size);
-  
       const formData = new FormData();
-      formData.append('file', blob, 'tree.jpg');
+      for (const slot of filledSlots) {
+        const res = await fetch(images[slot.key].uri);
+        const blob = await res.blob();
+        formData.append('files', blob, `${slot.key}.jpg`);
+      }
       if (location) {
         formData.append('latitude', String(location.latitude));
         formData.append('longitude', String(location.longitude));
       }
+      formData.append('capture_date', captureDate || new Date().toISOString());
 
       const response = await fetch(`${API_URL}/identify`, {
         method: 'POST',
@@ -98,7 +119,7 @@ export default function App() {
       setResult(data);
       if (!data.error) {
         try {
-          const entry = makeEntry({ result: data, images: { full: image }, latitude: location?.latitude, longitude: location?.longitude });
+          const entry = makeEntry({ result: data, images, latitude: location?.latitude, longitude: location?.longitude, captureDate });
           setHistoryList(await appendToHistory(entry));
         } catch (e) {
           console.log('保存历史记录失败：', e);
@@ -135,26 +156,21 @@ export default function App() {
         }}
       />
 
-      {/* Image preview */}
-      <View style={styles.imagePicker}>
-        {image ? (
-          <Image source={{ uri: image.uri }} style={styles.previewImage} />
-        ) : (
-          <View style={styles.placeholderBox}>
-            <Text style={styles.placeholderIcon}>📷</Text>
-            <Text style={styles.placeholderText}>请拍照或从相册选择</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Photo source buttons */}
-      <View style={styles.sourceRow}>
-        <TouchableOpacity style={styles.sourceButton} onPress={openCamera}>
-          <Text style={styles.sourceButtonText}>📷 拍照</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.sourceButton} onPress={pickImage}>
-          <Text style={styles.sourceButtonText}>🖼 从相册选择</Text>
-        </TouchableOpacity>
+      {/* Photo slots */}
+      <Text style={styles.slotsHint}>至少选择一张照片，多角度拍摄可提升识别准确度</Text>
+      <View style={styles.slotsRow}>
+        {SLOTS.map((slot) => (
+          <TouchableOpacity key={slot.key} style={styles.slotBox} onPress={() => chooseSource(slot)}>
+            {images[slot.key] ? (
+              <Image source={{ uri: images[slot.key].uri }} style={styles.slotImage} />
+            ) : (
+              <>
+                <Text style={styles.slotIcon}>{slot.icon}</Text>
+                <Text style={styles.slotLabel}>{slot.label}</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        ))}
       </View>
 
       <CameraCaptureModal
@@ -164,7 +180,7 @@ export default function App() {
       />
 
       {/* Identify button */}
-      {image && !loading && (
+      {SLOTS.some((slot) => images[slot.key]) && !loading && (
         <TouchableOpacity style={styles.button} onPress={identify}>
           <Text style={styles.buttonText}>识别这棵树</Text>
         </TouchableOpacity>
@@ -306,13 +322,13 @@ const styles = StyleSheet.create({
   historyButtonText: { fontSize: 16 },
   appName: { color: theme.accent, fontSize: 28, fontWeight: '700', textAlign: 'center' },
   subtitle: { color: theme.textMuted, fontSize: 14, textAlign: 'center', marginBottom: 24 },
-  imagePicker: { borderRadius: 20, overflow: 'hidden', marginBottom: 16, backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border },
-  placeholderBox: { height: 220, alignItems: 'center', justifyContent: 'center' },
+  slotsHint: { color: theme.textMuted, fontSize: 13, textAlign: 'center', marginBottom: 12 },
+  slotsRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  slotBox: { flex: 1, height: 120, borderRadius: 16, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border },
+  slotImage: { width: '100%', height: '100%' },
+  slotIcon: { fontSize: 28, marginBottom: 6 },
+  slotLabel: { color: theme.textMuted, fontSize: 13 },
   placeholderIcon: { fontSize: 48, marginBottom: 8 },
-  placeholderText: { color: theme.textMuted, fontSize: 16 },
-  previewImage: { width: '100%', height: 260 },
-  sourceRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  sourceButton: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.card, borderRadius: 14, paddingVertical: 14, borderWidth: 1, borderColor: theme.border },
   sourceButtonText: { color: theme.textPrimary, fontSize: 15, fontWeight: '600' },
   cameraContainer: { flex: 1, backgroundColor: '#000' },
   cameraPermissionBox: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, backgroundColor: theme.bg },

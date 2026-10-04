@@ -115,6 +115,14 @@ export default function App() {
         method: 'POST',
         body: formData,
       });
+      if (!response.ok) {
+        let detail = `服务器错误（${response.status}）`;
+        try {
+          const errBody = await response.json();
+          if (errBody?.detail) detail = errBody.detail;
+        } catch {}
+        throw new Error(detail);
+      }
       const data = await response.json();
       setResult(data);
       if (!data.error) {
@@ -127,7 +135,8 @@ export default function App() {
       }
     } catch (e) {
       console.log('报错了：', e);
-      Alert.alert('错误', '无法连接到服务器，请确认后端在运行');
+      const isNetworkError = e instanceof TypeError;
+      Alert.alert('错误', isNetworkError ? '无法连接到服务器，请确认后端在运行' : e.message);
     } finally {
       setLoading(false);
     }

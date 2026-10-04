@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet, Text, View, TouchableOpacity,
   Image, ScrollView, ActivityIndicator, Alert, Modal, Linking
@@ -7,6 +7,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import { theme } from './theme';
+import { loadHistory, appendToHistory, clearHistory, makeEntry } from './history';
+import HistoryModal from './HistoryModal';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const LOCATION_TIMEOUT_MS = 8000;
@@ -17,6 +19,12 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [location, setLocation] = useState(null);
+  const [historyList, setHistoryList] = useState([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+
+  useEffect(() => {
+    loadHistory().then(setHistoryList);
+  }, []);
 
   const fetchLocation = async () => {
     try {
@@ -88,6 +96,14 @@ export default function App() {
       });
       const data = await response.json();
       setResult(data);
+      if (!data.error) {
+        try {
+          const entry = makeEntry({ result: data, images: { full: image }, latitude: location?.latitude, longitude: location?.longitude });
+          setHistoryList(await appendToHistory(entry));
+        } catch (e) {
+          console.log('保存历史记录失败：', e);
+        }
+      }
     } catch (e) {
       console.log('报错了：', e);
       Alert.alert('错误', '无法连接到服务器，请确认后端在运行');
@@ -99,8 +115,25 @@ export default function App() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header */}
+      <TouchableOpacity style={styles.historyButton} onPress={() => setHistoryOpen(true)}>
+        <Text style={styles.historyButtonText}>🕘</Text>
+      </TouchableOpacity>
       <Text style={styles.appName}>🌿 TreeLens</Text>
       <Text style={styles.subtitle}>北美树木识别</Text>
+
+      <HistoryModal
+        visible={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        entries={historyList}
+        onSelect={(entry) => {
+          setResult(entry.result);
+          setHistoryOpen(false);
+        }}
+        onClear={async () => {
+          await clearHistory();
+          setHistoryList([]);
+        }}
+      />
 
       {/* Image preview */}
       <View style={styles.imagePicker}>
@@ -269,6 +302,8 @@ function CameraCaptureModal({ visible, onClose, onCapture }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.bg },
   content: { padding: 24, paddingTop: 60 },
+  historyButton: { position: 'absolute', top: 56, right: 24, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border },
+  historyButtonText: { fontSize: 16 },
   appName: { color: theme.accent, fontSize: 28, fontWeight: '700', textAlign: 'center' },
   subtitle: { color: theme.textMuted, fontSize: 14, textAlign: 'center', marginBottom: 24 },
   imagePicker: { borderRadius: 20, overflow: 'hidden', marginBottom: 16, backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border },

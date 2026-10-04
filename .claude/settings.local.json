@@ -22,7 +22,9 @@
       "Bash(git fsck *)",
       "Bash(git config *)",
       "Bash(npx expo-doctor *)",
-      "Bash(kill 46648)"
+      "Bash(kill 46648)",
+      "Bash(ipconfig getifaddr *)",
+      "Bash(lsof -iTCP:8000 -sTCP:LISTEN -P)"
     ]
   }
 }

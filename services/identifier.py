@@ -65,7 +65,7 @@ def identify_tree(image_bytes: bytes, latitude: float = None, longitude: float =
     image_data = encode_image(image_bytes)
     
     message = client.messages.create(
-        model="claude-haiku-4-5-20251001",
+        model="claude-sonnet-5",
         max_tokens=1000,
         messages=[
             {

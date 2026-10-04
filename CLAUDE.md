@@ -16,7 +16,7 @@ treelens-app/                    # React Native frontend (Expo)
 ```
 
 ## Tech Stack
-- **Backend**: FastAPI (Python), Anthropic Claude Vision API (`claude-haiku-4-5-20251001`)
+- **Backend**: FastAPI (Python), Anthropic Claude Vision API (`claude-sonnet-5`)
 - **Frontend**: React Native with Expo, expo-image-picker, expo-camera, expo-location
 - **Target platform**: iOS + Android (North American users)
 
@@ -88,7 +88,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 ## Key Design Decisions
-- Using `claude-haiku-4-5-20251001` (cheapest, fast enough for image classification)
+- Using `claude-sonnet-5` for stronger vision accuracy (switched from `claude-haiku-4-5-20251001`, which was cheaper/faster but misidentified trees from non-close-up photos)
 - Prompt instructs Claude to return raw JSON only — strip markdown fences in `identifier.py` before parsing
 - Image format detection uses raw byte headers (Python 3.13 removed `imghdr`)
 - CORS fully open for development (`allow_origins=["*"]`) — restrict before production

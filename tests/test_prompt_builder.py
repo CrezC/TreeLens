@@ -8,6 +8,12 @@ def test_empty_labels_raises():
         build_prompt([])
 
 
+def test_schema_includes_alternatives_with_cap_instruction():
+    prompt = build_prompt(["完整树形"])
+    assert '"alternatives"' in prompt
+    assert "最多2个" in prompt
+
+
 def test_single_label_no_hints():
     prompt = build_prompt(["完整树形"])
     assert "图片1：完整树形" in prompt

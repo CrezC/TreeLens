@@ -11,6 +11,7 @@ from services.image_normalize import ImageDecodeError
 from services.wikipedia import get_reference_image
 
 MAX_PHOTOS = 3
+MAX_ALTERNATIVES = 2
 
 app = FastAPI(title="TreeLens API")
 
@@ -42,4 +43,8 @@ async def identify(
         raise HTTPException(status_code=400, detail="无法处理图片，请换一张照片")
     if not result.get("error"):
         result["reference_image"] = get_reference_image(result.get("scientific_name"))
+        alternatives = (result.get("alternatives") or [])[:MAX_ALTERNATIVES]
+        for alt in alternatives:
+            alt["reference_image"] = get_reference_image(alt.get("scientific_name"))
+        result["alternatives"] = alternatives
     return result

@@ -77,8 +77,13 @@ def build_prompt(
     {{"label": "Wildlife Value", "value": "描述"}},
     {{"label": "Soil Type", "value": "描述"}},
     {{"label": "Sun Preference", "value": "描述"}}
+  ],
+  "alternatives": [
+    {{"common_name": "...", "scientific_name": "...", "confidence": 0-100的数字, "reason": "为什么这也是一个可能的候选"}}
   ]
 }}
 
 如果图片中没有树，请返回 {{"error": "No tree detected"}}
-如果无法识别具体树种，confidence设为低于50并说明原因。"""
+如果无法识别具体树种，confidence设为低于50并说明原因。
+如果你的识别置信度低于80，或者该树种容易与其他相似树种混淆，请在 alternatives 中列出最多2个次优候选及理由；
+如果你非常确定，alternatives 返回空数组 []。"""

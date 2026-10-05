@@ -1,3 +1,8 @@
+LANGUAGE_NAMES = {"en": "English", "zh": "中文", "es": "español"}
+DEFAULT_LANGUAGE = "zh"
+SUPPORTED_LANGUAGES = frozenset(LANGUAGE_NAMES)
+
+
 def _season_for_month(month: int) -> str:
     # Northern Hemisphere only — app is scoped to North America.
     if month in (12, 1, 2):
@@ -15,6 +20,7 @@ def build_prompt(
     longitude: float = None,
     capture_date: str = None,
     local_species: list[str] = None,
+    language: str = DEFAULT_LANGUAGE,
 ) -> str:
     if not image_labels:
         raise ValueError("image_labels must contain at least one label")
@@ -41,7 +47,17 @@ def build_prompt(
             f"如果图片特征明显指向其他树种（包括近期种植的园艺/非本地品种），请以视觉证据为准。"
         )
 
-    hints = "\n".join(h for h in (location_hint, season_hint, species_hint) if h)
+    language_name = LANGUAGE_NAMES.get(language, LANGUAGE_NAMES[DEFAULT_LANGUAGE])
+    language_instruction = (
+        f"请将 common_name、description、identification_basis、conservation_status、"
+        f"height_range、lifespan、distribution、toxicity.details、allergen.details、"
+        f"medicinal_uses[].use/.detail、ecology[].label/.value、"
+        f"alternatives[].common_name/.reason 用{language_name}撰写。"
+        f"但 scientific_name、family 必须保持拉丁学名原文，"
+        f"conservation_code 必须保持标准 IUCN 缩写（LC/NT/VU/EN/CR/EW/EX），两者都不要翻译。"
+    )
+
+    hints = "\n".join(h for h in (location_hint, season_hint, species_hint, language_instruction) if h)
 
     return f"""你是一位北美树木专家。{hints}
 
@@ -51,16 +67,16 @@ def build_prompt(
 请仔细分析图片中的树木，返回以下JSON格式（只返回JSON，不要其他文字）：
 
 {{
-  "common_name": "常见英文名",
+  "common_name": "常见名称",
   "scientific_name": "学名",
   "family": "科名",
   "confidence": 置信度0-100的数字,
   "identification_basis": "你是根据什么特征识别的（叶形、树皮、树冠等）",
   "description": "这种树的简短介绍（2-3句话）",
-  "conservation_status": "IUCN保护状态，如 Least Concern / Vulnerable / Endangered",
+  "conservation_status": "IUCN保护状态的文字描述",
   "conservation_code": "LC / VU / EN / CR 等",
-  "height_range": "典型高度范围，如 20-30m",
-  "lifespan": "寿命，如 200+ years",
+  "height_range": "典型高度范围（例如 20-30m）",
+  "lifespan": "寿命（例如 200+）",
   "distribution": ["主要分布区域1", "分布区域2"],
   "toxicity": {{
     "is_toxic": true或false,
@@ -74,9 +90,7 @@ def build_prompt(
     {{"use": "用途名称", "detail": "详细说明"}}
   ],
   "ecology": [
-    {{"label": "Wildlife Value", "value": "描述"}},
-    {{"label": "Soil Type", "value": "描述"}},
-    {{"label": "Sun Preference", "value": "描述"}}
+    {{"label": "类别名称（如野生动物价值/土壤类型/光照需求等）", "value": "描述"}}
   ],
   "alternatives": [
     {{"common_name": "...", "scientific_name": "...", "confidence": 0-100的数字, "reason": "为什么这也是一个可能的候选"}}

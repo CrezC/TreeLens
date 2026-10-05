@@ -1,6 +1,6 @@
 import pytest
 
-from services.prompt_builder import build_prompt
+from services.prompt_builder import build_prompt, DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, LANGUAGE_NAMES
 
 
 def test_empty_labels_raises():
@@ -65,6 +65,33 @@ def test_species_hint_present_and_overridable():
     assert "Acer saccharum" in prompt
     assert "Quercus rubra" in prompt
     assert "以视觉证据为准" in prompt
+
+
+@pytest.mark.parametrize("language", sorted(SUPPORTED_LANGUAGES))
+def test_language_directive_names_the_target_language(language):
+    prompt = build_prompt(["照片"], language=language)
+    assert LANGUAGE_NAMES[language] in prompt
+    assert "scientific_name" in prompt
+    assert "conservation_code" in prompt
+    assert "不要翻译" in prompt
+
+
+def test_default_language_is_chinese_when_omitted():
+    prompt = build_prompt(["照片"])
+    assert LANGUAGE_NAMES[DEFAULT_LANGUAGE] in prompt
+
+
+def test_unsupported_language_falls_back_to_default():
+    prompt = build_prompt(["照片"], language="fr")
+    assert LANGUAGE_NAMES[DEFAULT_LANGUAGE] in prompt
+
+
+def test_schema_examples_do_not_leak_english_text():
+    prompt = build_prompt(["照片"], language="zh")
+    assert "Wildlife Value" not in prompt
+    assert "Least Concern" not in prompt
+    assert "200+ years" not in prompt
+    assert "常见英文名" not in prompt
 
 
 def test_all_hints_combined():

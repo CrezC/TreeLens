@@ -1,6 +1,7 @@
 export const SUPPORTED_LANGUAGES = ['en', 'zh', 'es'];
-export const DEFAULT_LANGUAGE = 'zh';
+export const DEFAULT_LANGUAGE = 'en';
 export const LANGUAGE_LABELS = { en: 'English', zh: '中文', es: 'Español' };
+export const LANGUAGE_SHORT_LABELS = { en: 'EN', zh: '中', es: 'ES' };
 
 export const translations = {
   en: {

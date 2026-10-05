@@ -12,6 +12,7 @@ import HistoryModal from './HistoryModal';
 import AlternativesModal from './AlternativesModal';
 import LanguageModal from './LanguageModal';
 import { useLanguage } from './LanguageContext';
+import { LANGUAGE_SHORT_LABELS } from './translations';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const LOCATION_TIMEOUT_MS = 8000;
@@ -158,8 +159,8 @@ export default function App() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header */}
       <View style={styles.headerButtons}>
-        <TouchableOpacity style={styles.historyButton} onPress={() => setLanguageOpen(true)}>
-          <Text style={styles.historyButtonText}>🌐</Text>
+        <TouchableOpacity style={styles.languageButton} onPress={() => setLanguageOpen(true)}>
+          <Text style={styles.languageButtonText}>🌐 {LANGUAGE_SHORT_LABELS[language]}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.historyButton} onPress={() => setHistoryOpen(true)}>
           <Text style={styles.historyButtonText}>🕘</Text>
@@ -396,7 +397,9 @@ function CameraCaptureModal({ visible, onClose, onCapture }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.bg },
   content: { padding: 24, paddingTop: 60 },
-  headerButtons: { position: 'absolute', top: 56, right: 24, flexDirection: 'row', gap: 8 },
+  headerButtons: { position: 'absolute', top: 56, right: 24, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  languageButton: { height: 36, paddingHorizontal: 12, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.accent },
+  languageButtonText: { color: theme.bg, fontSize: 13, fontWeight: '700' },
   historyButton: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border },
   historyButtonText: { fontSize: 16 },
   appName: { color: theme.accent, fontSize: 28, fontWeight: '700', textAlign: 'center' },

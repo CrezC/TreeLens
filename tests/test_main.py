@@ -84,6 +84,55 @@ def test_identify_caps_alternatives_at_max(monkeypatch):
     assert len(response.json()["alternatives"]) == main.MAX_ALTERNATIVES
 
 
+def test_identify_passes_language_through_unchanged(monkeypatch):
+    captured = {}
+
+    def fake_identify_tree(images, image_labels, latitude, longitude, capture_date, language):
+        captured["language"] = language
+        return {"common_name": "x", "scientific_name": "y"}
+
+    monkeypatch.setattr(main, "identify_tree", fake_identify_tree)
+    monkeypatch.setattr(main, "get_reference_image", lambda name: None)
+
+    client = TestClient(main.app)
+    client.post("/identify", files={"files": ("leaf.jpg", _jpeg_bytes(), "image/jpeg")}, data={"language": "en"})
+
+    assert captured["language"] == "en"
+
+
+def test_identify_defaults_language_when_omitted(monkeypatch):
+    captured = {}
+
+    def fake_identify_tree(images, image_labels, latitude, longitude, capture_date, language):
+        captured["language"] = language
+        return {"common_name": "x", "scientific_name": "y"}
+
+    monkeypatch.setattr(main, "identify_tree", fake_identify_tree)
+    monkeypatch.setattr(main, "get_reference_image", lambda name: None)
+
+    client = TestClient(main.app)
+    client.post("/identify", files={"files": ("leaf.jpg", _jpeg_bytes(), "image/jpeg")})
+
+    assert captured["language"] == main.DEFAULT_LANGUAGE
+
+
+def test_identify_normalizes_unsupported_language(monkeypatch):
+    captured = {}
+
+    def fake_identify_tree(images, image_labels, latitude, longitude, capture_date, language):
+        captured["language"] = language
+        return {"common_name": "x", "scientific_name": "y"}
+
+    monkeypatch.setattr(main, "identify_tree", fake_identify_tree)
+    monkeypatch.setattr(main, "get_reference_image", lambda name: None)
+
+    client = TestClient(main.app)
+    response = client.post("/identify", files={"files": ("leaf.jpg", _jpeg_bytes(), "image/jpeg")}, data={"language": "fr"})
+
+    assert response.status_code == 200
+    assert captured["language"] == main.DEFAULT_LANGUAGE
+
+
 def test_identify_rejects_more_than_max_photos(monkeypatch):
     monkeypatch.setattr(main, "identify_tree", lambda *a, **k: {"common_name": "x", "scientific_name": "y"})
     monkeypatch.setattr(main, "get_reference_image", lambda name: None)

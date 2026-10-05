@@ -4,7 +4,7 @@ import os
 import json
 
 from services.gbif import get_local_species
-from services.prompt_builder import build_prompt
+from services.prompt_builder import build_prompt, DEFAULT_LANGUAGE
 from services.image_normalize import to_jpeg_bytes, JPEG_MEDIA_TYPE
 
 client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
@@ -18,9 +18,10 @@ def identify_tree(
     latitude: float = None,
     longitude: float = None,
     capture_date: str = None,
+    language: str = DEFAULT_LANGUAGE,
 ) -> dict:
     local_species = get_local_species(latitude, longitude) if latitude is not None and longitude is not None else []
-    prompt = build_prompt(image_labels, latitude, longitude, capture_date, local_species)
+    prompt = build_prompt(image_labels, latitude, longitude, capture_date, local_species, language)
 
     content = [
         {

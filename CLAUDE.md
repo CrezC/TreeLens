@@ -22,7 +22,8 @@ treelens-app/                    # React Native frontend (Expo)
 ├── App.js                       # Main UI, 3-slot image picker, API calls
 ├── theme.js                     # shared color theme
 ├── history.js                   # local identification history (AsyncStorage)
-└── HistoryModal.js              # history list UI
+├── HistoryModal.js              # history list UI
+└── AlternativesModal.js         # alternative-candidate detail page
 ```
 
 ## Tech Stack
@@ -95,7 +96,7 @@ Run tests: `npm test`
 - ✅ Seasonal context — capture date is sent and turned into a season hint so winter bare-branch deciduous trees aren't penalized
 - ✅ Local identification history — `treelens-app/history.js` + `HistoryModal.js`, AsyncStorage-backed, full result JSON (including reference_image/alternatives) stored per entry
 - ✅ Wikipedia reference photo — shown next to the user's own photo in the result card so they can visually judge accuracy; tapping opens the Wikipedia article
-- ✅ Alternative candidates — when Claude isn't confident, up to 2 lookalike species are shown with their own reference photo, confidence, and reasoning
+- ✅ Alternative candidates — when Claude isn't confident, up to 2 lookalike species are shown (via a "查看 N 个其他可能的树种" button opening `AlternativesModal.js`) with their own reference photo, confidence, and reasoning
 - ✅ Species lookups cached — `gbif.get_local_species` (rounded to ~1.1km) and `wikipedia.get_reference_image` are `@lru_cache`'d so repeat species/locations don't re-hit those APIs (the Claude vision call itself isn't cached — every photo is different, so there's nothing to key a cache on)
 
 ## Known Issues / Active Bugs

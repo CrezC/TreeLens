@@ -16,7 +16,7 @@ treelens/                        # FastAPI backend
     ├── gbif.py                  # GBIF occurrence lookup for local species hint (cached by rounded coords)
     ├── wikipedia.py              # reference photo lookup by scientific_name (cached)
     ├── image_normalize.py       # decode any format (incl. HEIC) and re-encode as JPEG
-    └── labels.py                # filename stem -> Chinese photo label
+    └── labels.py                # filename stem -> photo label
 
 treelens-app/                    # React Native frontend (Expo)
 ├── App.js                       # Main UI, 3-slot image picker, API calls
@@ -100,7 +100,7 @@ Run tests: `npm test`
 - ✅ Seasonal context — capture date is sent and turned into a season hint so winter bare-branch deciduous trees aren't penalized
 - ✅ Local identification history — `treelens-app/history.js` + `HistoryModal.js`, AsyncStorage-backed, full result JSON (including reference_image/alternatives) stored per entry
 - ✅ Wikipedia reference photo — shown next to the user's own photo in the result card so they can visually judge accuracy; tapping opens the Wikipedia article
-- ✅ Alternative candidates — when Claude isn't confident, up to 2 lookalike species are shown (via a "查看 N 个其他可能的树种" button opening `AlternativesModal.js`) with their own reference photo, confidence, and reasoning
+- ✅ Alternative candidates — when Claude isn't confident, up to 2 lookalike species are shown (via a "See N other possible species" button opening `AlternativesModal.js`) with their own reference photo, confidence, and reasoning
 - ✅ Species lookups cached — `gbif.get_local_species` (rounded to ~1.1km) and `wikipedia.get_reference_image` are `@lru_cache`'d so repeat species/locations don't re-hit those APIs (the Claude vision call itself isn't cached — every photo is different, so there's nothing to key a cache on)
 - ✅ Multi-language support (English/Chinese/Spanish) — covers both the static UI chrome (`translations.js`/`i18n.js`/`LanguageContext.js`, switched via `LanguageModal.js` from a new 🌐 header button, persisted to AsyncStorage) and the Claude-generated identification content itself (`language` form field → `prompt_builder.py`'s language directive). `scientific_name`/`family`/`conservation_code` stay pinned (Latin/universal) regardless of language. Wikipedia reference-image lookups stay English-only (only the thumbnail is shown, article language doesn't matter). More languages can be added later by extending `LANGUAGE_NAMES`/`SUPPORTED_LANGUAGES` (backend) and `translations.js`/`SUPPORTED_LANGUAGES` (frontend) — `i18n.test.js` has a completeness check that fails the moment a key is added to one language and forgotten in another
 
@@ -118,7 +118,7 @@ Run tests: `npm test`
 - `ImagePicker.MediaTypeOptions` (deprecated in SDK 56) replaced with `mediaTypes: ['images']`.
 - `API_URL` in `App.js` was hardcoded to a personal local IP. Now read from `EXPO_PUBLIC_API_URL` (Expo auto-inlines `EXPO_PUBLIC_*` vars from `.env`). Real value lives in gitignored `treelens-app/.env`; `treelens-app/.env.example` documents the format.
 - iOS photo-library picks are HEIC, which Claude's API rejects ("Could not process image", 500) — `get_media_type()`'s byte-sniffing silently mislabeled it as JPEG. `services/image_normalize.py` now decodes+re-encodes every upload as real JPEG via Pillow/pillow-heif regardless of source format.
-- The frontend showed a generic "无法连接到服务器" for *any* identify() failure, including real server errors with a non-JSON body (FastAPI's default 500 page is plain text, so `response.json()` threw) — now only shown for an actual `TypeError` (fetch's own failure mode); other errors show the real server message.
+- The frontend showed a generic "could not connect to the server" message for *any* identify() failure, including real server errors with a non-JSON body (FastAPI's default 500 page is plain text, so `response.json()` threw) — now only shown for an actual `TypeError` (fetch's own failure mode); other errors show the real server message.
 - Wikipedia's REST API 403s without a descriptive `User-Agent` header (`requests`' default gets blocked even though `curl`'s doesn't) — caught live while testing `services/wikipedia.py`.
 - `/identify` 500'd on real device testing: `message.content[0].text` assumed index 0 is always the text block, but `claude-sonnet-5` can emit a `ThinkingBlock` (no `.text`) first — `AttributeError`. Also `max_tokens=1000` was too tight once thinking tokens plus the fuller JSON schema compete for budget, truncating the JSON mid-response. Fixed with `identifier.extract_response_text()` (filters blocks by `type == "text"`) and `max_tokens=4096`.
 
@@ -138,10 +138,10 @@ ANTHROPIC_API_KEY=sk-ant-...
 - Image format detection uses raw byte headers (Python 3.13 removed `imghdr`)
 - CORS fully open for development (`allow_origins=["*"]`) — restrict before production
 - Prompt construction lives in `services/prompt_builder.py` as a pure function (no `anthropic` import) specifically so it's unit-testable without an API key; same reasoning for `services/gbif.py` and `services/labels.py` being dependency-free
-- Each photo's role (leaf/bark/full) is passed from frontend to backend via the upload's **filename stem** (`leaf.jpg`/`bark.jpg`/`full.jpg`) rather than an extra form field — `services/labels.py` maps it to a Chinese label, defaulting gracefully for anything unrecognized
+- Each photo's role (leaf/bark/full) is passed from frontend to backend via the upload's **filename stem** (`leaf.jpg`/`bark.jpg`/`full.jpg`) rather than an extra form field — `services/labels.py` maps it to an English label, defaulting gracefully for anything unrecognized
 - GBIF lookups and the Claude call are both synchronous/blocking inside an `async def` route — pre-existing pattern, not worth fixing until it's actually a bottleneck (`fastapi.concurrency.run_in_threadpool` would be the fix)
 - Breaking change: `/identify`'s file field was renamed `file` → `files` (now a list) — both repos must be deployed together
 - `reference_image`/`alternatives` enrichment happens in `main.py` after `identify_tree()` returns, not inside it — `identifier.py` stays Claude-only; enrichment is a separate post-processing step with its own failure mode (best-effort, never blocks returning the identification)
 - Frontend tracks failed reference-image URLs in a `brokenImageUrls` Set (populated via `Image`'s `onError`) so a dead Wikipedia thumbnail link falls back to the same 🌳 placeholder used when there's no reference_image at all, instead of a blank box
-- `build_prompt()`'s Chinese scaffold stays a single language-invariant template — only one small directive block (naming the target language, listing which fields to translate vs. pin) is appended per request, rather than duplicating the whole ~2KB prompt per language; the JSON schema key *names* are structural (parsed by `json.loads`, never shown to a human) so they never need translating
+- `build_prompt()`'s instructional scaffold (written in English) stays a single language-invariant template — only one small directive block (naming the target language, listing which fields to translate vs. pin) is appended per request, rather than duplicating the whole ~2KB prompt per language; the JSON schema key *names* are structural (parsed by `json.loads`, never shown to a human) so they never need translating
 - Frontend i18n is hand-rolled (`translate(language, key, params)` + React Context), not `react-i18next` — ~50 keys / 3 languages / no RTL / no real pluralization need didn't justify that library's async-init/namespace machinery

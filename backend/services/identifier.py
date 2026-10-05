@@ -61,7 +61,7 @@ def identify_tree(
     )
 
     response_text = extract_response_text(message.content)
-    # 清除Claude可能返回的markdown格式
+    # Strip markdown formatting that Claude may return
     response_text = response_text.strip()
     if response_text.startswith("```"):
         response_text = response_text.split("```")[1]

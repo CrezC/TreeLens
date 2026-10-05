@@ -2,14 +2,14 @@ from services.labels import label_for_filename, DEFAULT_LABEL
 
 
 def test_known_stems():
-    assert label_for_filename("leaf.jpg") == "叶片近照"
-    assert label_for_filename("bark.jpg") == "树皮纹理"
-    assert label_for_filename("full.jpg") == "完整树形"
+    assert label_for_filename("leaf.jpg") == "leaf close-up"
+    assert label_for_filename("bark.jpg") == "bark texture"
+    assert label_for_filename("full.jpg") == "full tree shape"
 
 
 def test_case_insensitive():
-    assert label_for_filename("BARK.PNG") == "树皮纹理"
-    assert label_for_filename("Leaf.JPEG") == "叶片近照"
+    assert label_for_filename("BARK.PNG") == "bark texture"
+    assert label_for_filename("Leaf.JPEG") == "leaf close-up"
 
 
 def test_unknown_stem_falls_back_to_default():

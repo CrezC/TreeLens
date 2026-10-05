@@ -1,4 +1,4 @@
-LANGUAGE_NAMES = {"en": "English", "zh": "中文", "es": "español"}
+LANGUAGE_NAMES = {"en": "English", "zh": "Chinese", "es": "Spanish"}
 DEFAULT_LANGUAGE = "en"
 SUPPORTED_LANGUAGES = frozenset(LANGUAGE_NAMES)
 
@@ -6,12 +6,12 @@ SUPPORTED_LANGUAGES = frozenset(LANGUAGE_NAMES)
 def _season_for_month(month: int) -> str:
     # Northern Hemisphere only — app is scoped to North America.
     if month in (12, 1, 2):
-        return "冬季"
+        return "winter"
     if month in (3, 4, 5):
-        return "春季"
+        return "spring"
     if month in (6, 7, 8):
-        return "夏季"
-    return "秋季"
+        return "summer"
+    return "fall"
 
 
 def build_prompt(
@@ -25,79 +25,82 @@ def build_prompt(
     if not image_labels:
         raise ValueError("image_labels must contain at least one label")
 
-    image_section = "\n".join(f"图片{i + 1}：{label}" for i, label in enumerate(image_labels))
+    image_section = "\n".join(f"Photo {i + 1}: {label}" for i, label in enumerate(image_labels))
 
     location_hint = ""
     if latitude is not None and longitude is not None:
-        location_hint = f"图片拍摄于北美坐标 ({latitude}, {longitude})。"
+        location_hint = f"The photo was taken at North American coordinates ({latitude}, {longitude})."
 
     season_hint = ""
     if capture_date:
         month = int(capture_date[5:7])
         season_hint = (
-            f"照片拍摄日期为 {capture_date}（北半球{_season_for_month(month)}），"
-            f"落叶树在冬季可能呈裸枝状态，请据此调整判断，不要仅因无叶而降低置信度或误判树种。"
+            f"The photo was taken on {capture_date} (Northern Hemisphere {_season_for_month(month)}). "
+            f"Deciduous trees may be bare in winter — adjust your judgment accordingly rather than "
+            f"lowering confidence or misidentifying the species just because it has no leaves."
         )
 
     species_hint = ""
     if local_species:
-        species_list = "、".join(local_species)
+        species_list = ", ".join(local_species)
         species_hint = (
-            f"该地区曾有记录的树种包括：{species_list}。这仅是参考线索，不是最终答案——"
-            f"如果图片特征明显指向其他树种（包括近期种植的园艺/非本地品种），请以视觉证据为准。"
+            f"Species previously recorded in this area include: {species_list}. This is only a reference "
+            f"clue, not the final answer — if the photo's features clearly point to a different species "
+            f"(including recently planted ornamental/non-native varieties), go with the visual evidence."
         )
 
     language_name = LANGUAGE_NAMES.get(language, LANGUAGE_NAMES[DEFAULT_LANGUAGE])
     language_instruction = (
-        f"请将 common_name、description、identification_basis、conservation_status、"
-        f"height_range、lifespan、distribution、toxicity.details、allergen.details、"
-        f"medicinal_uses[].use/.detail、ecology[].label/.value、"
-        f"alternatives[].common_name/.reason 用{language_name}撰写。"
-        f"但 scientific_name、family 必须保持拉丁学名原文，"
-        f"conservation_code 必须保持标准 IUCN 缩写（LC/NT/VU/EN/CR/EW/EX），两者都不要翻译。"
+        f"Write common_name, description, identification_basis, conservation_status, "
+        f"height_range, lifespan, distribution, toxicity.details, allergen.details, "
+        f"medicinal_uses[].use/.detail, ecology[].label/.value, and "
+        f"alternatives[].common_name/.reason in {language_name}. "
+        f"But scientific_name and family must stay as the original Latin name, and "
+        f"conservation_code must stay as the standard IUCN abbreviation (LC/NT/VU/EN/CR/EW/EX) — "
+        f"do not translate either of those."
     )
 
     hints = "\n".join(h for h in (location_hint, season_hint, species_hint, language_instruction) if h)
 
-    return f"""你是一位北美树木专家。{hints}
+    return f"""You are a North American tree expert. {hints}
 
-本次提供了以下照片：
+The following photos are provided:
 {image_section}
 
-请仔细分析图片中的树木，返回以下JSON格式（只返回JSON，不要其他文字）：
+Carefully analyze the tree in the photos and return the following JSON format (return JSON only, no other text):
 
 {{
-  "common_name": "常见名称",
-  "scientific_name": "学名",
-  "family": "科名",
-  "confidence": 置信度0-100的数字,
-  "identification_basis": "你是根据什么特征识别的（叶形、树皮、树冠等）",
-  "description": "这种树的简短介绍（2-3句话）",
-  "conservation_status": "IUCN保护状态的文字描述",
-  "conservation_code": "LC / VU / EN / CR 等",
-  "height_range": "典型高度范围（例如 20-30m）",
-  "lifespan": "寿命（例如 200+）",
-  "distribution": ["主要分布区域1", "分布区域2"],
+  "common_name": "common name",
+  "scientific_name": "scientific name",
+  "family": "family name",
+  "confidence": a number 0-100,
+  "identification_basis": "what features you used to identify it (leaf shape, bark, crown, etc.)",
+  "description": "a brief introduction to this tree (2-3 sentences)",
+  "conservation_status": "text description of IUCN conservation status",
+  "conservation_code": "LC / VU / EN / CR etc.",
+  "height_range": "typical height range (e.g. 20-30m)",
+  "lifespan": "lifespan (e.g. 200+)",
+  "distribution": ["main distribution region 1", "distribution region 2"],
   "toxicity": {{
-    "is_toxic": true或false,
-    "details": "毒性详情，如果有的话"
+    "is_toxic": true or false,
+    "details": "toxicity details, if any"
   }},
   "allergen": {{
-    "is_allergen": true或false,
-    "details": "过敏源详情，如果有的话"
+    "is_allergen": true or false,
+    "details": "allergen details, if any"
   }},
   "medicinal_uses": [
-    {{"use": "用途名称", "detail": "详细说明"}}
+    {{"use": "use name", "detail": "detailed explanation"}}
   ],
   "ecology": [
-    {{"label": "类别名称（如野生动物价值/土壤类型/光照需求等）", "value": "描述"}}
+    {{"label": "category name (e.g. wildlife value/soil type/sun preference)", "value": "description"}}
   ],
   "alternatives": [
-    {{"common_name": "...", "scientific_name": "...", "confidence": 0-100的数字, "reason": "为什么这也是一个可能的候选"}}
+    {{"common_name": "...", "scientific_name": "...", "confidence": a number 0-100, "reason": "why this is also a possible candidate"}}
   ]
 }}
 
-如果图片中没有树，请返回 {{"error": "No tree detected"}}
-如果无法识别具体树种，confidence设为低于50并说明原因。
-如果你的识别置信度低于80，或者该树种容易与其他相似树种混淆，请在 alternatives 中列出最多2个次优候选及理由；
-如果你非常确定，alternatives 返回空数组 []。"""
+If there is no tree in the photo, return {{"error": "No tree detected"}}
+If you can't identify the specific species, set confidence below 50 and explain why.
+If your confidence is below 80, or the species is easily confused with other similar species, list up to 2 runner-up candidates with reasons in alternatives;
+if you're very confident, return an empty array [] for alternatives."""

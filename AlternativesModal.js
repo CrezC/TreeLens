@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, Modal, Linking } from 'react-native';
 import { theme } from './theme';
+import { useLanguage } from './LanguageContext';
 
 export default function AlternativesModal({ visible, onClose, mainResult, alternatives }) {
+  const { t } = useLanguage();
   const [brokenUrls, setBrokenUrls] = useState(() => new Set());
   const markBroken = (url) => setBrokenUrls((prev) => new Set(prev).add(url));
 
@@ -10,16 +12,16 @@ export default function AlternativesModal({ visible, onClose, mainResult, altern
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>🤔 也有可能是</Text>
+          <Text style={styles.title}>{t('alternatives.title')}</Text>
           <TouchableOpacity onPress={onClose}>
-            <Text style={styles.closeText}>完成</Text>
+            <Text style={styles.closeText}>{t('common.done')}</Text>
           </TouchableOpacity>
         </View>
 
         <ScrollView contentContainerStyle={styles.list}>
           {mainResult && (
             <Text style={styles.intro}>
-              主要识别结果是 <Text style={styles.introHighlight}>{mainResult.common_name}</Text>（置信度 {mainResult.confidence}%），以下是其他可能的候选：
+              {t('alternatives.intro', { name: mainResult.common_name, confidence: mainResult.confidence })}
             </Text>
           )}
 
@@ -46,7 +48,7 @@ export default function AlternativesModal({ visible, onClose, mainResult, altern
               <Text style={styles.reason}>{alt.reason}</Text>
               {alt.reference_image && (
                 <TouchableOpacity onPress={() => Linking.openURL(alt.reference_image.page_url)}>
-                  <Text style={styles.link}>在 Wikipedia 上查看 →</Text>
+                  <Text style={styles.link}>{t('alternatives.viewOnWikipedia')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -64,7 +66,6 @@ const styles = StyleSheet.create({
   closeText: { color: theme.accent, fontSize: 15, fontWeight: '600' },
   list: { padding: 16 },
   intro: { color: theme.textSecond, fontSize: 13, lineHeight: 20, marginBottom: 16 },
-  introHighlight: { color: theme.textPrimary, fontWeight: '600' },
   card: { backgroundColor: theme.card, borderRadius: 16, padding: 14, marginBottom: 14, borderWidth: 1, borderColor: theme.border },
   image: { width: '100%', height: 160, borderRadius: 12, marginBottom: 12, backgroundColor: theme.surface },
   imagePlaceholder: { alignItems: 'center', justifyContent: 'center' },

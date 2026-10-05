@@ -12,6 +12,19 @@ client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 def encode_image(image_bytes: bytes) -> str:
     return base64.standard_b64encode(image_bytes).decode("utf-8")
 
+
+def extract_response_text(content_blocks) -> str:
+    """Concatenate only the text block(s) in a Claude response.
+
+    message.content[0] isn't reliably the text block — claude-sonnet-5 can
+    emit a ThinkingBlock (no .text attribute) before the TextBlock, which
+    raised AttributeError when this blindly indexed [0].
+    """
+    text_parts = [block.text for block in content_blocks if getattr(block, "type", None) == "text"]
+    if not text_parts:
+        raise ValueError("Claude's response contained no text content block")
+    return "".join(text_parts)
+
 def identify_tree(
     images: list[bytes],
     image_labels: list[str],
@@ -38,7 +51,7 @@ def identify_tree(
 
     message = client.messages.create(
         model="claude-sonnet-5",
-        max_tokens=1000,
+        max_tokens=4096,
         messages=[
             {
                 "role": "user",
@@ -47,7 +60,7 @@ def identify_tree(
         ],
     )
 
-    response_text = message.content[0].text
+    response_text = extract_response_text(message.content)
     # 清除Claude可能返回的markdown格式
     response_text = response_text.strip()
     if response_text.startswith("```"):

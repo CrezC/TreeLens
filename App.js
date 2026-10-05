@@ -159,10 +159,18 @@ export default function App() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header */}
       <View style={styles.headerButtons}>
-        <TouchableOpacity style={styles.languageButton} onPress={() => setLanguageOpen(true)}>
+        <TouchableOpacity
+          style={styles.languageButton}
+          onPress={() => setLanguageOpen(true)}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
           <Text style={styles.languageButtonText}>🌐 {LANGUAGE_SHORT_LABELS[language]}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.historyButton} onPress={() => setHistoryOpen(true)}>
+        <TouchableOpacity
+          style={styles.historyButton}
+          onPress={() => setHistoryOpen(true)}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
           <Text style={styles.historyButtonText}>🕘</Text>
         </TouchableOpacity>
       </View>
@@ -397,10 +405,10 @@ function CameraCaptureModal({ visible, onClose, onCapture }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.bg },
   content: { padding: 24, paddingTop: 60 },
-  headerButtons: { position: 'absolute', top: 56, right: 24, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  languageButton: { height: 36, paddingHorizontal: 12, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.accent },
+  headerButtons: { position: 'absolute', top: 52, right: 24, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  languageButton: { height: 44, paddingHorizontal: 14, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.accent },
   languageButtonText: { color: theme.bg, fontSize: 13, fontWeight: '700' },
-  historyButton: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border },
+  historyButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border },
   historyButtonText: { fontSize: 16 },
   appName: { color: theme.accent, fontSize: 28, fontWeight: '700', textAlign: 'center' },
   subtitle: { color: theme.textMuted, fontSize: 14, textAlign: 'center', marginBottom: 24 },

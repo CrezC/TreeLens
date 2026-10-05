@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, Modal, Alert } from 'react-native';
 import { theme } from './theme';
+import { useLanguage } from './LanguageContext';
 
 function formatTimestamp(iso) {
   if (!iso) return '';
@@ -8,10 +9,12 @@ function formatTimestamp(iso) {
 }
 
 export default function HistoryModal({ visible, onClose, entries, onSelect, onClear }) {
+  const { t } = useLanguage();
+
   const confirmClear = () => {
-    Alert.alert('清空历史记录', '确定要删除全部识别历史吗？此操作无法撤销。', [
-      { text: '取消', style: 'cancel' },
-      { text: '清空', style: 'destructive', onPress: onClear },
+    Alert.alert(t('history.clearConfirmTitle'), t('history.clearConfirmMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('history.clearConfirmButton'), style: 'destructive', onPress: onClear },
     ]);
   };
 
@@ -19,15 +22,15 @@ export default function HistoryModal({ visible, onClose, entries, onSelect, onCl
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>🕘 我的树木日志</Text>
+          <Text style={styles.title}>{t('history.title')}</Text>
           <TouchableOpacity onPress={onClose}>
-            <Text style={styles.closeText}>完成</Text>
+            <Text style={styles.closeText}>{t('common.done')}</Text>
           </TouchableOpacity>
         </View>
 
         {entries.length === 0 ? (
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyText}>还没有识别记录</Text>
+            <Text style={styles.emptyText}>{t('history.empty')}</Text>
           </View>
         ) : (
           <ScrollView contentContainerStyle={styles.list}>
@@ -41,14 +44,14 @@ export default function HistoryModal({ visible, onClose, entries, onSelect, onCl
                   </View>
                 )}
                 <View style={styles.rowText}>
-                  <Text style={styles.commonName} numberOfLines={1}>{entry.result?.common_name || '未知'}</Text>
+                  <Text style={styles.commonName} numberOfLines={1}>{entry.result?.common_name || t('history.unknownSpecies')}</Text>
                   <Text style={styles.sciName} numberOfLines={1}>{entry.result?.scientific_name}</Text>
                   <Text style={styles.timestamp}>{formatTimestamp(entry.timestamp)}</Text>
                 </View>
               </TouchableOpacity>
             ))}
             <TouchableOpacity style={styles.clearButton} onPress={confirmClear}>
-              <Text style={styles.clearText}>清空历史</Text>
+              <Text style={styles.clearText}>{t('history.clearHistory')}</Text>
             </TouchableOpacity>
           </ScrollView>
         )}

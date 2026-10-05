@@ -10,6 +10,7 @@ import { theme } from './theme';
 import { loadHistory, appendToHistory, clearHistory, makeEntry } from './history';
 import HistoryModal from './HistoryModal';
 import AlternativesModal from './AlternativesModal';
+import LanguageModal from './LanguageModal';
 import { useLanguage } from './LanguageContext';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -33,6 +34,7 @@ export default function App() {
   const [historyList, setHistoryList] = useState([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [alternativesOpen, setAlternativesOpen] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
   const [brokenImageUrls, setBrokenImageUrls] = useState(() => new Set());
 
   const markImageBroken = (url) => {
@@ -155,11 +157,18 @@ export default function App() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header */}
-      <TouchableOpacity style={styles.historyButton} onPress={() => setHistoryOpen(true)}>
-        <Text style={styles.historyButtonText}>🕘</Text>
-      </TouchableOpacity>
+      <View style={styles.headerButtons}>
+        <TouchableOpacity style={styles.historyButton} onPress={() => setLanguageOpen(true)}>
+          <Text style={styles.historyButtonText}>🌐</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.historyButton} onPress={() => setHistoryOpen(true)}>
+          <Text style={styles.historyButtonText}>🕘</Text>
+        </TouchableOpacity>
+      </View>
       <Text style={styles.appName}>🌿 TreeLens</Text>
       <Text style={styles.subtitle}>{t('app.subtitle')}</Text>
+
+      <LanguageModal visible={languageOpen} onClose={() => setLanguageOpen(false)} />
 
       <HistoryModal
         visible={historyOpen}
@@ -387,7 +396,8 @@ function CameraCaptureModal({ visible, onClose, onCapture }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.bg },
   content: { padding: 24, paddingTop: 60 },
-  historyButton: { position: 'absolute', top: 56, right: 24, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border },
+  headerButtons: { position: 'absolute', top: 56, right: 24, flexDirection: 'row', gap: 8 },
+  historyButton: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border },
   historyButtonText: { fontSize: 16 },
   appName: { color: theme.accent, fontSize: 28, fontWeight: '700', textAlign: 'center' },
   subtitle: { color: theme.textMuted, fontSize: 14, textAlign: 'center', marginBottom: 24 },

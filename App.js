@@ -9,6 +9,7 @@ import * as Location from 'expo-location';
 import { theme } from './theme';
 import { loadHistory, appendToHistory, clearHistory, makeEntry } from './history';
 import HistoryModal from './HistoryModal';
+import AlternativesModal from './AlternativesModal';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const LOCATION_TIMEOUT_MS = 8000;
@@ -29,6 +30,7 @@ export default function App() {
   const [captureDate, setCaptureDate] = useState(null);
   const [historyList, setHistoryList] = useState([]);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [alternativesOpen, setAlternativesOpen] = useState(false);
   const [brokenImageUrls, setBrokenImageUrls] = useState(() => new Set());
 
   const markImageBroken = (url) => {
@@ -302,36 +304,21 @@ export default function App() {
 
           {/* Alternative candidates */}
           {result.alternatives?.length > 0 && (
-            <>
-              <Text style={styles.sectionTitle}>🤔 也有可能是</Text>
-              {result.alternatives.map((alt, i) => (
-                <View key={i} style={styles.altCard}>
-                  {alt.reference_image && !brokenImageUrls.has(alt.reference_image.thumbnail_url) ? (
-                    <TouchableOpacity onPress={() => Linking.openURL(alt.reference_image.page_url)}>
-                      <Image
-                        source={{ uri: alt.reference_image.thumbnail_url }}
-                        style={styles.altImage}
-                        onError={() => markImageBroken(alt.reference_image.thumbnail_url)}
-                      />
-                    </TouchableOpacity>
-                  ) : (
-                    <View style={[styles.altImage, styles.altImagePlaceholder]}>
-                      <Text style={{ fontSize: 20 }}>🌳</Text>
-                    </View>
-                  )}
-                  <View style={styles.altText}>
-                    <Text style={styles.altName}>
-                      {alt.common_name} <Text style={styles.altConfidence}>{alt.confidence}%</Text>
-                    </Text>
-                    <Text style={styles.altSciName}>{alt.scientific_name}</Text>
-                    <Text style={styles.altReason}>{alt.reason}</Text>
-                  </View>
-                </View>
-              ))}
-            </>
+            <TouchableOpacity style={styles.altLinkButton} onPress={() => setAlternativesOpen(true)}>
+              <Text style={styles.altLinkText}>
+                🤔 查看 {result.alternatives.length} 个其他可能的树种 →
+              </Text>
+            </TouchableOpacity>
           )}
         </View>
       )}
+
+      <AlternativesModal
+        visible={alternativesOpen}
+        onClose={() => setAlternativesOpen(false)}
+        mainResult={result}
+        alternatives={result?.alternatives}
+      />
 
       {result?.error && (
         <Text style={styles.errorText}>未能识别，请换一张更清晰的照片</Text>
@@ -435,13 +422,8 @@ const styles = StyleSheet.create({
   medUse: { color: theme.accent, fontSize: 14, fontWeight: '600', marginBottom: 4 },
   ecoRow: { marginBottom: 10 },
   ecoLabel: { color: theme.textMuted, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 },
-  altCard: { flexDirection: 'row', backgroundColor: theme.surface, borderRadius: 12, padding: 10, marginBottom: 8, alignItems: 'center', gap: 10 },
-  altImage: { width: 56, height: 56, borderRadius: 8 },
   altImagePlaceholder: { alignItems: 'center', justifyContent: 'center', backgroundColor: theme.card },
-  altText: { flex: 1 },
-  altName: { color: theme.textPrimary, fontSize: 14, fontWeight: '600' },
-  altConfidence: { color: theme.textMuted, fontSize: 12, fontWeight: '400' },
-  altSciName: { color: theme.accentDim, fontSize: 12, fontStyle: 'italic', marginTop: 1 },
-  altReason: { color: theme.textSecond, fontSize: 12, marginTop: 3, lineHeight: 17 },
+  altLinkButton: { backgroundColor: theme.surface, borderRadius: 12, padding: 14, marginTop: 4, alignItems: 'center' },
+  altLinkText: { color: theme.accent, fontSize: 14, fontWeight: '600' },
   errorText: { color: theme.red, textAlign: 'center', fontSize: 15, marginTop: 20 },
 });

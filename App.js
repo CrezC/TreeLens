@@ -156,28 +156,10 @@ export default function App() {
   };
 
   return (
+    <View style={styles.screen}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header */}
-      <View style={styles.headerButtons}>
-        <TouchableOpacity
-          style={styles.languageButton}
-          onPress={() => setLanguageOpen(true)}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <Text style={styles.languageButtonText}>🌐 {LANGUAGE_SHORT_LABELS[language]}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.historyButton}
-          onPress={() => setHistoryOpen(true)}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <Text style={styles.historyButtonText}>🕘</Text>
-        </TouchableOpacity>
-      </View>
       <Text style={styles.appName}>🌿 TreeLens</Text>
       <Text style={styles.subtitle}>{t('app.subtitle')}</Text>
-
-      <LanguageModal visible={languageOpen} onClose={() => setLanguageOpen(false)} />
 
       <HistoryModal
         visible={historyOpen}
@@ -347,6 +329,32 @@ export default function App() {
         <Text style={styles.errorText}>{t('app.errorNoTree')}</Text>
       )}
     </ScrollView>
+
+      {/* Header buttons are siblings rendered AFTER the ScrollView (not
+          inside it) so they: (a) never compete with the ScrollView's own
+          gesture recognizer for taps — that competition is why taps near a
+          ScrollView's top edge often need several tries — and (b) paint on
+          top of it, since the ScrollView's transform gives it its own
+          stacking context that would otherwise cover an earlier sibling. */}
+      <View style={styles.headerButtons}>
+        <TouchableOpacity
+          style={styles.languageButton}
+          onPress={() => setLanguageOpen(true)}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+          <Text style={styles.languageButtonText}>🌐 {LANGUAGE_SHORT_LABELS[language]}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.historyButton}
+          onPress={() => setHistoryOpen(true)}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+          <Text style={styles.historyButtonText}>🕘</Text>
+        </TouchableOpacity>
+      </View>
+
+      <LanguageModal visible={languageOpen} onClose={() => setLanguageOpen(false)} />
+    </View>
   );
 }
 
@@ -403,6 +411,7 @@ function CameraCaptureModal({ visible, onClose, onCapture }) {
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: theme.bg },
   container: { flex: 1, backgroundColor: theme.bg },
   content: { padding: 24, paddingTop: 60 },
   headerButtons: { position: 'absolute', top: 52, right: 24, flexDirection: 'row', alignItems: 'center', gap: 12 },

@@ -76,7 +76,7 @@ def test_language_directive_names_the_target_language(language):
     assert "不要翻译" in prompt
 
 
-def test_default_language_is_chinese_when_omitted():
+def test_default_language_used_when_omitted():
     prompt = build_prompt(["照片"])
     assert LANGUAGE_NAMES[DEFAULT_LANGUAGE] in prompt
 

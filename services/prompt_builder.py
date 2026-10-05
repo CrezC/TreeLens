@@ -1,5 +1,5 @@
 LANGUAGE_NAMES = {"en": "English", "zh": "中文", "es": "español"}
-DEFAULT_LANGUAGE = "zh"
+DEFAULT_LANGUAGE = "en"
 SUPPORTED_LANGUAGES = frozenset(LANGUAGE_NAMES)
 
 

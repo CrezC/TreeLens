@@ -52,11 +52,11 @@ export default function App() {
       if (status !== 'granted') return;
       const position = await Promise.race([
         Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('定位超时')), LOCATION_TIMEOUT_MS)),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Location request timed out')), LOCATION_TIMEOUT_MS)),
       ]);
       setLocation(position.coords);
     } catch (e) {
-      console.log('定位失败：', e);
+      console.log('Location failed:', e);
     }
   };
 
@@ -143,11 +143,11 @@ export default function App() {
           const entry = makeEntry({ result: data, images, latitude: location?.latitude, longitude: location?.longitude, captureDate });
           setHistoryList(await appendToHistory(entry));
         } catch (e) {
-          console.log('保存历史记录失败：', e);
+          console.log('Failed to save history entry:', e);
         }
       }
     } catch (e) {
-      console.log('报错了：', e);
+      console.log('Error:', e);
       const isNetworkError = e instanceof TypeError;
       Alert.alert(t('app.errorTitle'), isNetworkError ? t('app.networkError') : e.message);
     } finally {
@@ -369,7 +369,7 @@ function CameraCaptureModal({ visible, onClose, onCapture }) {
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
       onCapture(photo);
     } catch (e) {
-      console.log('拍照失败：', e);
+      console.log('Photo capture failed:', e);
       Alert.alert(t('app.cameraFailedTitle'), t('app.cameraFailedMessage'));
       onClose();
     }

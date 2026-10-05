@@ -9,7 +9,7 @@ treelens/                        # FastAPI backend
 ├── main.py                      # FastAPI app, routes, reference_image/alternatives enrichment
 ├── .env                         # ANTHROPIC_API_KEY (never commit)
 ├── requirements.txt / requirements-dev.txt
-├── tests/                       # pytest — labels, gbif, wikipedia, prompt_builder, image_normalize, main (route-level)
+├── tests/                       # pytest — labels, gbif, wikipedia, prompt_builder, image_normalize, identifier, main (route-level)
 └── services/
     ├── identifier.py            # Claude Vision API call + image processing
     ├── prompt_builder.py        # pure prompt construction (multi-image/season/species/alternatives)
@@ -120,6 +120,7 @@ Run tests: `npm test`
 - iOS photo-library picks are HEIC, which Claude's API rejects ("Could not process image", 500) — `get_media_type()`'s byte-sniffing silently mislabeled it as JPEG. `services/image_normalize.py` now decodes+re-encodes every upload as real JPEG via Pillow/pillow-heif regardless of source format.
 - The frontend showed a generic "无法连接到服务器" for *any* identify() failure, including real server errors with a non-JSON body (FastAPI's default 500 page is plain text, so `response.json()` threw) — now only shown for an actual `TypeError` (fetch's own failure mode); other errors show the real server message.
 - Wikipedia's REST API 403s without a descriptive `User-Agent` header (`requests`' default gets blocked even though `curl`'s doesn't) — caught live while testing `services/wikipedia.py`.
+- `/identify` 500'd on real device testing: `message.content[0].text` assumed index 0 is always the text block, but `claude-sonnet-5` can emit a `ThinkingBlock` (no `.text`) first — `AttributeError`. Also `max_tokens=1000` was too tight once thinking tokens plus the fuller JSON schema compete for budget, truncating the JSON mid-response. Fixed with `identifier.extract_response_text()` (filters blocks by `type == "text"`) and `max_tokens=4096`.
 
 ## Planned Features (not yet built)
 1. **IUCN Red List API** — fetch live conservation status

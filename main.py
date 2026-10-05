@@ -44,7 +44,7 @@ async def identify(
     try:
         result = identify_tree(images, image_labels, latitude, longitude, capture_date, language)
     except ImageDecodeError:
-        raise HTTPException(status_code=400, detail="无法处理图片，请换一张照片")
+        raise HTTPException(status_code=400, detail="Could not process the image, please try a different photo")
     if not result.get("error"):
         result["reference_image"] = get_reference_image(result.get("scientific_name"))
         alternatives = (result.get("alternatives") or [])[:MAX_ALTERNATIVES]

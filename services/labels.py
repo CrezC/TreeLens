@@ -1,9 +1,9 @@
 LABELS = {
-    "leaf": "叶片近照",
-    "bark": "树皮纹理",
-    "full": "完整树形",
+    "leaf": "leaf close-up",
+    "bark": "bark texture",
+    "full": "full tree shape",
 }
-DEFAULT_LABEL = "照片"
+DEFAULT_LABEL = "photo"
 
 
 def label_for_filename(filename: str | None) -> str:

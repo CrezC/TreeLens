@@ -52,8 +52,8 @@ def test_identify_enriches_each_alternative_with_its_own_reference_image(monkeyp
         "common_name": "Sugar Maple",
         "scientific_name": "Acer saccharum",
         "alternatives": [
-            {"common_name": "Red Maple", "scientific_name": "Acer rubrum", "confidence": 60, "reason": "叶形相近"},
-            {"common_name": "Silver Maple", "scientific_name": "Acer saccharinum", "confidence": 40, "reason": "树皮相近"},
+            {"common_name": "Red Maple", "scientific_name": "Acer rubrum", "confidence": 60, "reason": "similar leaf shape"},
+            {"common_name": "Silver Maple", "scientific_name": "Acer saccharinum", "confidence": 40, "reason": "similar bark"},
         ],
     })
     monkeypatch.setattr(main, "get_reference_image", lambda name: {"thumbnail_url": f"https://example.com/{name}.jpg", "page_url": "x", "attribution": "Wikipedia"})

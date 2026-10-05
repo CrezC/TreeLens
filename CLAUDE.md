@@ -23,7 +23,11 @@ treelens-app/                    # React Native frontend (Expo)
 ├── theme.js                     # shared color theme
 ├── history.js                   # local identification history (AsyncStorage)
 ├── HistoryModal.js              # history list UI
-└── AlternativesModal.js         # alternative-candidate detail page
+├── AlternativesModal.js         # alternative-candidate detail page
+├── translations.js              # en/zh/es dictionaries (flat key→string per language)
+├── i18n.js                      # pure translate() + loadLanguage/saveLanguage
+├── LanguageContext.js           # LanguageProvider/useLanguage() — language state + t()
+└── LanguageModal.js             # language picker UI
 ```
 
 ## Tech Stack
@@ -54,7 +58,7 @@ Run tests: `npm test`
 
 ## API Endpoints
 - `GET /` — health check
-- `POST /identify` — accepts up to 3 `files` (repeated form field; filename stem `leaf`/`bark`/`full` tags each photo, anything else falls back to a generic label), plus optional `latitude`/`longitude`/`capture_date` (ISO string), returns tree identification JSON
+- `POST /identify` — accepts up to 3 `files` (repeated form field; filename stem `leaf`/`bark`/`full` tags each photo, anything else falls back to a generic label), plus optional `latitude`/`longitude`/`capture_date` (ISO string)/`language` (`en`/`zh`/`es`, default `zh`, unrecognized values silently normalized to default), returns tree identification JSON
 
 ## identify Response Schema
 ```json
@@ -98,6 +102,7 @@ Run tests: `npm test`
 - ✅ Wikipedia reference photo — shown next to the user's own photo in the result card so they can visually judge accuracy; tapping opens the Wikipedia article
 - ✅ Alternative candidates — when Claude isn't confident, up to 2 lookalike species are shown (via a "查看 N 个其他可能的树种" button opening `AlternativesModal.js`) with their own reference photo, confidence, and reasoning
 - ✅ Species lookups cached — `gbif.get_local_species` (rounded to ~1.1km) and `wikipedia.get_reference_image` are `@lru_cache`'d so repeat species/locations don't re-hit those APIs (the Claude vision call itself isn't cached — every photo is different, so there's nothing to key a cache on)
+- ✅ Multi-language support (English/Chinese/Spanish) — covers both the static UI chrome (`translations.js`/`i18n.js`/`LanguageContext.js`, switched via `LanguageModal.js` from a new 🌐 header button, persisted to AsyncStorage) and the Claude-generated identification content itself (`language` form field → `prompt_builder.py`'s language directive). `scientific_name`/`family`/`conservation_code` stay pinned (Latin/universal) regardless of language. Wikipedia reference-image lookups stay English-only (only the thumbnail is shown, article language doesn't matter). More languages can be added later by extending `LANGUAGE_NAMES`/`SUPPORTED_LANGUAGES` (backend) and `translations.js`/`SUPPORTED_LANGUAGES` (frontend) — `i18n.test.js` has a completeness check that fails the moment a key is added to one language and forgotten in another
 
 ## Known Issues / Active Bugs
 - Web picker uses blob URI which works; native mobile camera/location flow confirmed working on a real device as of this round of changes
@@ -105,6 +110,8 @@ Run tests: `npm test`
 - `Alert.alert()` is a no-op in `react-native-web`, so the photo-slot chooser only works on iOS/Android via Expo Go, not the web preview
 - `lru_cache` on `gbif`/`wikipedia` lookups also caches a transient failure (timeout, 5xx) until process restart — accepted tradeoff for an indie app, would need a smarter cache for anything higher-stakes
 - Accuracy on non-close-up single photos should be improved now by multi-image + GBIF + season hints + alternatives, but not yet validated against real-world misidentifications the way the original issue was found
+- `app.json`'s camera/location permission-prompt strings are native-compiled (device-locale-driven) and cannot respond to the in-app language switch — no JS runs before the OS permission dialog appears. Intentional, out-of-scope limitation (fixing it would require device-locale detection, which was explicitly declined in favor of pure manual switching)
+- Actual Claude output language (does it really answer in Spanish, do the pinned fields really stay untranslated) is unverified beyond prompt-construction unit tests — needs a real tree photo per language to confirm live, which wasn't available during this round of changes
 
 ## Recently Fixed
 - `main.py` was crashing `/identify` with 500 on every call: `services.identifier` was imported before `load_dotenv()` ran, and an ambient empty `ANTHROPIC_API_KEY` env var was shadowing the real key. Fixed with `load_dotenv(override=True)` moved before the import.
@@ -135,3 +142,5 @@ ANTHROPIC_API_KEY=sk-ant-...
 - Breaking change: `/identify`'s file field was renamed `file` → `files` (now a list) — both repos must be deployed together
 - `reference_image`/`alternatives` enrichment happens in `main.py` after `identify_tree()` returns, not inside it — `identifier.py` stays Claude-only; enrichment is a separate post-processing step with its own failure mode (best-effort, never blocks returning the identification)
 - Frontend tracks failed reference-image URLs in a `brokenImageUrls` Set (populated via `Image`'s `onError`) so a dead Wikipedia thumbnail link falls back to the same 🌳 placeholder used when there's no reference_image at all, instead of a blank box
+- `build_prompt()`'s Chinese scaffold stays a single language-invariant template — only one small directive block (naming the target language, listing which fields to translate vs. pin) is appended per request, rather than duplicating the whole ~2KB prompt per language; the JSON schema key *names* are structural (parsed by `json.loads`, never shown to a human) so they never need translating
+- Frontend i18n is hand-rolled (`translate(language, key, params)` + React Context), not `react-i18next` — ~50 keys / 3 languages / no RTL / no real pluralization need didn't justify that library's async-init/namespace machinery

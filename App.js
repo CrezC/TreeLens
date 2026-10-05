@@ -10,17 +10,19 @@ import { theme } from './theme';
 import { loadHistory, appendToHistory, clearHistory, makeEntry } from './history';
 import HistoryModal from './HistoryModal';
 import AlternativesModal from './AlternativesModal';
+import { useLanguage } from './LanguageContext';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const LOCATION_TIMEOUT_MS = 8000;
 
 const SLOTS = [
-  { key: 'leaf', label: '叶片近照', icon: '🍃' },
-  { key: 'bark', label: '树皮', icon: '🌳' },
-  { key: 'full', label: '整树', icon: '🌲' },
+  { key: 'leaf', labelKey: 'app.slotLeaf', icon: '🍃' },
+  { key: 'bark', labelKey: 'app.slotBark', icon: '🌳' },
+  { key: 'full', labelKey: 'app.slotFull', icon: '🌲' },
 ];
 
 export default function App() {
+  const { language, t } = useLanguage();
   const [images, setImages] = useState({ leaf: null, bark: null, full: null });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -69,7 +71,7 @@ export default function App() {
   const pickImage = async (slotKey) => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('需要相册权限');
+      Alert.alert(t('app.needGalleryPermission'));
       return;
     }
     const res = await ImagePicker.launchImageLibraryAsync({
@@ -92,10 +94,10 @@ export default function App() {
   };
 
   const chooseSource = (slot) => {
-    Alert.alert(slot.label, undefined, [
-      { text: '拍照', onPress: () => openCamera(slot.key) },
-      { text: '从相册选择', onPress: () => pickImage(slot.key) },
-      { text: '取消', style: 'cancel' },
+    Alert.alert(t(slot.labelKey), undefined, [
+      { text: t('app.takePhoto'), onPress: () => openCamera(slot.key) },
+      { text: t('app.chooseFromLibrary'), onPress: () => pickImage(slot.key) },
+      { text: t('common.cancel'), style: 'cancel' },
     ]);
   };
 
@@ -117,13 +119,14 @@ export default function App() {
         formData.append('longitude', String(location.longitude));
       }
       formData.append('capture_date', captureDate || new Date().toISOString());
+      formData.append('language', language);
 
       const response = await fetch(`${API_URL}/identify`, {
         method: 'POST',
         body: formData,
       });
       if (!response.ok) {
-        let detail = `服务器错误（${response.status}）`;
+        let detail = t('app.serverError', { status: response.status });
         try {
           const errBody = await response.json();
           if (errBody?.detail) detail = errBody.detail;
@@ -143,7 +146,7 @@ export default function App() {
     } catch (e) {
       console.log('报错了：', e);
       const isNetworkError = e instanceof TypeError;
-      Alert.alert('错误', isNetworkError ? '无法连接到服务器，请确认后端在运行' : e.message);
+      Alert.alert(t('app.errorTitle'), isNetworkError ? t('app.networkError') : e.message);
     } finally {
       setLoading(false);
     }
@@ -156,7 +159,7 @@ export default function App() {
         <Text style={styles.historyButtonText}>🕘</Text>
       </TouchableOpacity>
       <Text style={styles.appName}>🌿 TreeLens</Text>
-      <Text style={styles.subtitle}>北美树木识别</Text>
+      <Text style={styles.subtitle}>{t('app.subtitle')}</Text>
 
       <HistoryModal
         visible={historyOpen}
@@ -173,7 +176,7 @@ export default function App() {
       />
 
       {/* Photo slots */}
-      <Text style={styles.slotsHint}>至少选择一张照片，多角度拍摄可提升识别准确度</Text>
+      <Text style={styles.slotsHint}>{t('app.slotsHint')}</Text>
       <View style={styles.slotsRow}>
         {SLOTS.map((slot) => (
           <TouchableOpacity key={slot.key} style={styles.slotBox} onPress={() => chooseSource(slot)}>
@@ -182,7 +185,7 @@ export default function App() {
             ) : (
               <>
                 <Text style={styles.slotIcon}>{slot.icon}</Text>
-                <Text style={styles.slotLabel}>{slot.label}</Text>
+                <Text style={styles.slotLabel}>{t(slot.labelKey)}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -198,7 +201,7 @@ export default function App() {
       {/* Identify button */}
       {SLOTS.some((slot) => images[slot.key]) && !loading && (
         <TouchableOpacity style={styles.button} onPress={identify}>
-          <Text style={styles.buttonText}>识别这棵树</Text>
+          <Text style={styles.buttonText}>{t('app.identifyButton')}</Text>
         </TouchableOpacity>
       )}
 
@@ -206,7 +209,7 @@ export default function App() {
       {loading && (
         <View style={styles.loadingBox}>
           <ActivityIndicator size="large" color={theme.accent} />
-          <Text style={styles.loadingText}>正在分析...</Text>
+          <Text style={styles.loadingText}>{t('app.analyzing')}</Text>
         </View>
       )}
 
@@ -225,7 +228,7 @@ export default function App() {
           </View>
 
           {/* Confidence */}
-          <Text style={styles.confidence}>识别置信度：{result.confidence}%</Text>
+          <Text style={styles.confidence}>{t('app.confidenceLabel', { confidence: result.confidence })}</Text>
 
           {/* Compare with reference photo */}
           {result.reference_image && (
@@ -236,7 +239,7 @@ export default function App() {
                     source={{ uri: (images.leaf || images.full || images.bark).uri }}
                     style={styles.compareImage}
                   />
-                  <Text style={styles.compareLabel}>你的照片</Text>
+                  <Text style={styles.compareLabel}>{t('app.yourPhoto')}</Text>
                 </View>
               )}
               <View style={styles.compareCol}>
@@ -253,25 +256,27 @@ export default function App() {
                     />
                   )}
                 </TouchableOpacity>
-                <Text style={styles.compareLabel}>参考图 · {result.reference_image.attribution}</Text>
+                <Text style={styles.compareLabel}>
+                  {t('app.referenceLabel', { attribution: result.reference_image.attribution })}
+                </Text>
               </View>
             </View>
           )}
 
           {/* Description */}
-          <Text style={styles.sectionTitle}>简介</Text>
+          <Text style={styles.sectionTitle}>{t('app.descriptionTitle')}</Text>
           <Text style={styles.bodyText}>{result.description}</Text>
 
           {/* Alerts */}
           {result.allergen?.is_allergen && (
             <View style={[styles.alertCard, { borderColor: theme.gold }]}>
-              <Text style={[styles.alertTitle, { color: theme.gold }]}>🤧 过敏风险</Text>
+              <Text style={[styles.alertTitle, { color: theme.gold }]}>{t('app.allergenTitle')}</Text>
               <Text style={styles.bodyText}>{result.allergen.details}</Text>
             </View>
           )}
           {result.toxicity?.is_toxic && (
             <View style={[styles.alertCard, { borderColor: theme.red }]}>
-              <Text style={[styles.alertTitle, { color: theme.red }]}>⚠️ 毒性警告</Text>
+              <Text style={[styles.alertTitle, { color: theme.red }]}>{t('app.toxicityTitle')}</Text>
               <Text style={styles.bodyText}>{result.toxicity.details}</Text>
             </View>
           )}
@@ -279,7 +284,7 @@ export default function App() {
           {/* Medicinal */}
           {result.medicinal_uses?.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>💊 药用价值</Text>
+              <Text style={styles.sectionTitle}>{t('app.medicinalTitle')}</Text>
               {result.medicinal_uses.map((m, i) => (
                 <View key={i} style={styles.medRow}>
                   <Text style={styles.medUse}>{m.use}</Text>
@@ -292,7 +297,7 @@ export default function App() {
           {/* Ecology */}
           {result.ecology?.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>🌍 生态信息</Text>
+              <Text style={styles.sectionTitle}>{t('app.ecologyTitle')}</Text>
               {result.ecology.map((e, i) => (
                 <View key={i} style={styles.ecoRow}>
                   <Text style={styles.ecoLabel}>{e.label}</Text>
@@ -306,7 +311,7 @@ export default function App() {
           {result.alternatives?.length > 0 && (
             <TouchableOpacity style={styles.altLinkButton} onPress={() => setAlternativesOpen(true)}>
               <Text style={styles.altLinkText}>
-                🤔 查看 {result.alternatives.length} 个其他可能的树种 →
+                {t('app.viewAlternatives', { count: result.alternatives.length })}
               </Text>
             </TouchableOpacity>
           )}
@@ -321,13 +326,14 @@ export default function App() {
       />
 
       {result?.error && (
-        <Text style={styles.errorText}>未能识别，请换一张更清晰的照片</Text>
+        <Text style={styles.errorText}>{t('app.errorNoTree')}</Text>
       )}
     </ScrollView>
   );
 }
 
 function CameraCaptureModal({ visible, onClose, onCapture }) {
+  const { t } = useLanguage();
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef(null);
 
@@ -338,7 +344,7 @@ function CameraCaptureModal({ visible, onClose, onCapture }) {
       onCapture(photo);
     } catch (e) {
       console.log('拍照失败：', e);
-      Alert.alert('拍照失败', '此设备可能不支持相机，请改用相册选择照片');
+      Alert.alert(t('app.cameraFailedTitle'), t('app.cameraFailedMessage'));
       onClose();
     }
   };
@@ -351,17 +357,17 @@ function CameraCaptureModal({ visible, onClose, onCapture }) {
         ) : !permission.granted ? (
           <View style={styles.cameraPermissionBox}>
             <Text style={styles.placeholderIcon}>📷</Text>
-            <Text style={styles.permissionText}>TreeLens 需要访问相机来拍摄树木照片</Text>
+            <Text style={styles.permissionText}>{t('app.cameraPermissionExplainer')}</Text>
             <TouchableOpacity
               style={styles.button}
               onPress={permission.canAskAgain ? requestPermission : () => Linking.openSettings()}
             >
               <Text style={styles.buttonText}>
-                {permission.canAskAgain ? '允许访问相机' : '前往设置开启权限'}
+                {permission.canAskAgain ? t('app.allowCameraAccess') : t('app.openSettingsForPermission')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={onClose} style={{ marginTop: 16 }}>
-              <Text style={styles.sourceButtonText}>取消</Text>
+              <Text style={styles.sourceButtonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         ) : (

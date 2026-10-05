@@ -58,7 +58,7 @@ Run tests: `npm test`
 
 ## API Endpoints
 - `GET /` — health check
-- `POST /identify` — accepts up to 3 `files` (repeated form field; filename stem `leaf`/`bark`/`full` tags each photo, anything else falls back to a generic label), plus optional `latitude`/`longitude`/`capture_date` (ISO string)/`language` (`en`/`zh`/`es`, default `zh`, unrecognized values silently normalized to default), returns tree identification JSON
+- `POST /identify` — accepts up to 3 `files` (repeated form field; filename stem `leaf`/`bark`/`full` tags each photo, anything else falls back to a generic label), plus optional `latitude`/`longitude`/`capture_date` (ISO string)/`language` (`en`/`zh`/`es`, default `en`, unrecognized values silently normalized to default), returns tree identification JSON
 
 ## identify Response Schema
 ```json
